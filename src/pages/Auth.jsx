@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
+import { GoogleLogin } from '@react-oauth/google'
 import { User, Mail, Lock } from '../icons'
 import api from '../api'
 
@@ -75,6 +76,26 @@ const Auth = ({ mode }) => {
         } finally {
             setLoading(false)
         }
+    }
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setLoading(true)
+        setError('')
+        try {
+            const response = await api.auth.googleLogin(credentialResponse.credential)
+            localStorage.setItem('authToken', response.access)
+            localStorage.setItem('refreshToken', response.refresh)
+            navigate('/')
+        } catch (err) {
+            setError(err.message || 'Google authentication failed. Please try again.')
+            console.error('Google Auth error:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleGoogleError = () => {
+        setError('Google authentication was unsuccessful.')
     }
 
     return (
@@ -224,15 +245,18 @@ const Auth = ({ mode }) => {
                         <p>or</p>
                         <span />
                     </div>
-                    <div className="social-row">
-                        <button type="button" className="ghost wide">
-                            Continue with Google
-                        </button>
-                        <button type="button" className="ghost wide">
-                            Continue with Apple
-                        </button>
+                    <div className="social-row" style={{ display: 'flex', justifyContent: 'center' }}>
+                        <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={handleGoogleError}
+                            theme="outline"
+                            size="large"
+                            text={isSignIn ? "signin_with" : "signup_with"}
+                            shape="rectangular"
+                        />
                     </div>
                 </form>
+
                 <div className="auth-footer">
                     {isSignIn ? (
                         <>
